@@ -1,53 +1,85 @@
 import streamlit as st
+import requests
+import time
 import sqlite3
-import json
 
-# Create a SQLite database connection
-conn = sqlite3.connect('local_database.db')
-c = conn.cursor()
+# Define the API URL
+api_url = "http://localhost:5000/conversations"  # URL of your Flask API
 
-# Create a table to store form data if it doesn't exist
-c.execute('''CREATE TABLE IF NOT EXISTS user_data (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT,
-                email TEXT,
-                json_data TEXT
-             )''')
-conn.commit()
+# Function to fetch conversations from the API and reverse the order
+def fetch_conversations():
+    response = requests.get(api_url)
+    if response.status_code == 200:
+        conversations = response.json()
+        return conversations[::-1]  # Reverse the order
+    else:
+        st.error("Failed to fetch conversations.")
+        return []
 
+# Function to update a conversation entry
+def update_conversation(conversation_id, updated_user_message, updated_assistant_message):
+    data = {
+        "user_message": updated_user_message,
+        "assistant_message": updated_assistant_message
+    }
+    response = requests.put(f"{api_url}/{conversation_id}", json=data)
+    if response.status_code == 200:
+        st.success("Conversation updated successfully!")
+    else:
+        st.error("Failed to update conversation.")
 
-# Streamlit app
-st.title("User Data Collection App")
+# Streamlit app interface
+st.title("Conversation Collection App")
 
-# Define the form to collect user data
-with st.form("User Data Form"):
-    name = st.text_input("Name")
-    email = st.text_input("Email")
-
-    json_data = st.text_area("JSON Data (In the specified format)")
-
+with st.form("Conversation Form"):
+    edit_mode = st.checkbox("Edit Mode")
+    if edit_mode:
+        edit_conversation_id = st.number_input("Enter Conversation ID to Edit", min_value=1)
+    user_message = st.text_input("User Message")
+    assistant_message = st.text_input("Assistant Message")
     submit_button = st.form_submit_button("Submit")
 
 if submit_button:
-    # Insert the user data and JSON data into the database
-    c.execute("INSERT INTO user_data (name, email, json_data) VALUES (?, ?, ?)", (name, email, json_data))
-    conn.commit()
-    st.success("Data submitted successfully!")
+    # Send the conversation data to the API
+    data = {"user_message": user_message, "assistant_message": assistant_message}
+    response = requests.post(api_url, json=data)
+    if response.status_code == 201:
+        st.success("Conversation added successfully!")
+    else:
+        st.error("An error occurred.")
 
-# Display the collected data
-st.header("Collected Data")
-data = c.execute("SELECT id, name, email, json_data FROM user_data").fetchall()
-for row in data:
-    st.write("ID:", row[0])
-    st.write("Name:", row[1])
-    st.write("Email:", row[2])
+# Auto-refresh every 5 seconds
+if time.time() % 5 < 1:
+    st.experimental_rerun()
 
-    # Parse and display JSON data
-    try:
-        json_obj = json.loads(row[3])
-        st.json(json_obj)
-    except json.JSONDecodeError:
-        st.warning("Invalid JSON data")
+# Display conversations in the specified format with the most recent at the top
+st.header("Collected Conversations")
+structured_data = fetch_conversations()
+formatted_data = []
+for entry in structured_data:
+    formatted_entry = {
+        "id": f"identity_{entry['id']}",
+        "conversations": [
+            {"from": "user", "value": entry["user_message"]},
+            {"from": "assistant", "value": entry["assistant_message"]}
+        ]
+    }
+    formatted_data.append(formatted_entry)
+
+# Display the formatted data without numbers at the beginning
+for i, entry in enumerate(formatted_data):
+    st.json(entry)
+    if edit_mode and edit_conversation_id:
+        if entry["id"] == f"identity_{edit_conversation_id}":
+            # Input fields to edit the conversation
+            edited_user_message = st.text_input("Edit User Message", value=entry["conversations"][0]["value"])
+            edited_assistant_message = st.text_input("Edit Assistant Message", value=entry["conversations"][1]["value"])
+            update_button = st.button("Update Conversation")
+            if update_button:
+                # Update the conversation entry
+                update_conversation(edit_conversation_id, edited_user_message, edited_assistant_message)
+
+conn = sqlite3.connect('local_database.db')
 
 # Close the database connection
 conn.close()
