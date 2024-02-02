@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-import time
+import time  # Import the time module for auto-refresh
 import sqlite3
 
 # Define the API URL
@@ -16,25 +16,10 @@ def fetch_conversations():
         st.error("Failed to fetch conversations.")
         return []
 
-# Function to update a conversation entry
-def update_conversation(conversation_id, updated_user_message, updated_assistant_message):
-    data = {
-        "user_message": updated_user_message,
-        "assistant_message": updated_assistant_message
-    }
-    response = requests.put(f"{api_url}/{conversation_id}", json=data)
-    if response.status_code == 200:
-        st.success("Conversation updated successfully!")
-    else:
-        st.error("Failed to update conversation.")
-
 # Streamlit app interface
 st.title("Conversation Collection App")
 
 with st.form("Conversation Form"):
-    edit_mode = st.checkbox("Edit Mode")
-    if edit_mode:
-        edit_conversation_id = st.number_input("Enter Conversation ID to Edit", min_value=1)
     user_message = st.text_input("User Message")
     assistant_message = st.text_input("Assistant Message")
     submit_button = st.form_submit_button("Submit")
@@ -69,15 +54,6 @@ for entry in structured_data:
 # Display the formatted data without numbers at the beginning
 for i, entry in enumerate(formatted_data):
     st.json(entry)
-    if edit_mode and edit_conversation_id:
-        if entry["id"] == f"identity_{edit_conversation_id}":
-            # Input fields to edit the conversation
-            edited_user_message = st.text_input("Edit User Message", value=entry["conversations"][0]["value"])
-            edited_assistant_message = st.text_input("Edit Assistant Message", value=entry["conversations"][1]["value"])
-            update_button = st.button("Update Conversation")
-            if update_button:
-                # Update the conversation entry
-                update_conversation(edit_conversation_id, edited_user_message, edited_assistant_message)
 
 conn = sqlite3.connect('local_database.db')
 
