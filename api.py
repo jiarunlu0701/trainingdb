@@ -1,8 +1,6 @@
-# api.py
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import sqlite3
-import json
 
 app = Flask(__name__)
 CORS(app)
@@ -27,6 +25,20 @@ def conversations():
         return jsonify([{"id": x["id"], "user_message": x["user_message"], "assistant_message": x["assistant_message"]} for x in conversations])
 
     conn.close()
+
+@app.route('/conversations/<int:conversation_id>', methods=['PUT'])
+def update_conversation(conversation_id):
+    conn = get_db_connection()
+    data = request.json
+    try:
+        conn.execute("UPDATE conversations SET user_message=?, assistant_message=? WHERE id=?",
+                     (data['user_message'], data['assistant_message'], conversation_id))
+        conn.commit()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -22,7 +22,9 @@ st.title("Conversation Collection App")
 with st.form("Conversation Form"):
     user_message = st.text_input("User Message")
     assistant_message = st.text_input("Assistant Message")
+    conversation_id = st.text_input("Conversation ID (for update)")
     submit_button = st.form_submit_button("Submit")
+    update_button = st.form_submit_button("Update")
 
 if submit_button:
     # Send the conversation data to the API
@@ -32,6 +34,20 @@ if submit_button:
         st.success("Conversation added successfully!")
     else:
         st.error("An error occurred.")
+
+if update_button:
+    # Check if conversation_id is provided
+    if conversation_id:
+        # Send the conversation data to the API for updating
+        data = {"user_message": user_message, "assistant_message": assistant_message}
+        update_url = f"{api_url}/{conversation_id}"
+        response = requests.put(update_url, json=data)
+        if response.status_code == 200:
+            st.success("Conversation updated successfully!")
+        else:
+            st.error(f"Failed to update conversation. Error: {response.text}")
+    else:
+        st.warning("Please provide a Conversation ID for updating.")
 
 # Auto-refresh every 5 seconds
 if time.time() % 5 < 1:
