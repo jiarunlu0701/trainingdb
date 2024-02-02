@@ -15,6 +15,7 @@ c.execute('''CREATE TABLE IF NOT EXISTS user_data (
              )''')
 conn.commit()
 
+
 # Streamlit app
 st.title("User Data Collection App")
 
