@@ -17,14 +17,14 @@ def fetch_conversations():
         return []
 
 # Streamlit app interface
-st.title("Conversation Collection App")
+st.title("清大科越AI客服训练集合")
 
 with st.form("Conversation Form"):
-    user_message = st.text_input("User Message")
-    assistant_message = st.text_input("Assistant Message")
-    conversation_id = st.text_input("Conversation ID (for update)")
-    submit_button = st.form_submit_button("Submit")
-    update_button = st.form_submit_button("Update")
+    user_message = st.text_input("用户提问")
+    assistant_message = st.text_input("清大科越AI回答")
+    conversation_id = st.text_input("修改对话ID (仅需要修改对话时填写)")
+    submit_button = st.form_submit_button("提交")
+    update_button = st.form_submit_button("修改")
 
 if submit_button:
     # Send the conversation data to the API
