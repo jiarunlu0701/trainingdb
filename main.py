@@ -56,20 +56,22 @@ if time.time() % 5 < 1:
 # Display conversations in the specified format with the most recent at the top
 st.header("Collected Conversations")
 structured_data = fetch_conversations()
-formatted_data = []
+
+# Create a list to store the conversations
+conversations_list = []
+
 for entry in structured_data:
-    formatted_entry = {
+    conversation = {
         "id": f"identity_{entry['id']}",
         "conversations": [
             {"from": "user", "value": entry["user_message"]},
             {"from": "assistant", "value": entry["assistant_message"]}
         ]
     }
-    formatted_data.append(formatted_entry)
+    conversations_list.append(conversation)
 
-# Display the formatted data without numbers at the beginning
-for i, entry in enumerate(formatted_data):
-    st.json(entry)
+# Display the entire list as a JSON object
+st.json(conversations_list)
 
 conn = sqlite3.connect('local_database.db')
 
